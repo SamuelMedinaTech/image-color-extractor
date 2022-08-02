@@ -11,7 +11,7 @@ class ColorHandler:
     def __init__(self):
         self.current_colors = []
 
-    def extract_colors(self, image, num_of_colors):
+    def extract_colors(self, image, num_of_colors) -> list[str]:
         """Extract a specified number of colors from the given image.
             Args:
                 image (str): The filepath of the image
