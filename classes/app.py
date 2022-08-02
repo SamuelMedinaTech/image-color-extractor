@@ -9,7 +9,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 
 from classes.color_handler import ColorHandler, ColorHandlerException
-from classes.html_handler import HtmlHandler
+from classes.html_handler import HtmlHandler, HtmlHandlerException
 
 
 class App:
@@ -117,6 +117,7 @@ class App:
         """Extract the colors from the displayed image"""
         try:
             colors = self.color_handler.extract_colors(self.image, self.extract_colors_entry_variable.get())
+            colors.sort()
             self.generate_color_html(colors)
         except ColorHandlerException as e:
             messagebox.showerror(title="Error!", message=e.message)
@@ -130,11 +131,14 @@ class App:
             Parameters:
                 colors (list[str]): A list of color hex code strings
         """
-        self.html_handler.create_table()
-        for color in colors:
-            self.html_handler.add_table_row(color, "", background_color=color)
-        filename = self.html_handler.create_html_file("extracted_colors")
-        self.html_handler.open_html_in_browser(filename)
+        try:
+            self.html_handler.create_color_table(num_of_rows=len(colors), colors=colors)
+            filename = self.html_handler.create_html_file("extracted_colors")
+            self.html_handler.open_html_in_browser(filename)
+        except ColorHandlerException as e:
+            messagebox.showerror(title="Error!", message=e.message)
+        except HtmlHandlerException as e:
+            messagebox.showerror(title="Error!", message=e.message)
 
     # Static Methods
     @staticmethod
