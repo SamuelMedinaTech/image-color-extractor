@@ -1,6 +1,6 @@
 # Image Color Extractor
 
-The aptly-named project is a Python application powered by Tkinter, used for extracting a palette of colors from an image.
+The aptly-named project is a Python application powered by Tkinter and [Airium](https://pypi.org/project/airium/), used for extracting a palette of colors from an image.
 
 ## Prerequisites
 
