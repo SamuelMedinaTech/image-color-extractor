@@ -1,9 +1,11 @@
 import os
+import pathlib
+import platform
+from urllib.parse import quote
 import webbrowser
+from winreg import HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
 from airium import Airium
-
-CHROME_PATH = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s"
 
 
 class HtmlHandler:
@@ -23,40 +25,51 @@ class HtmlHandler:
         with self.template.html(lang="pl"):
             with self.template.head():
                 self.template.meta(charset="utf-8")
-                self.template.link(href='https://unpkg.com/@picocss/pico@1.4.1/css/pico.css', rel='stylesheet')
+                self.template.meta(
+                    name="viewport",
+                    content="width=device-width, initial-scale=1"
+                )
                 self.template.title(_t="Extracted Colors")
-            with self.template.body():
-                self.template.h1("Extracted Colors:")
+                self.template.link(
+                    href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css",
+                    rel="stylesheet",
+                    integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx",
+                    crossorigin="anonymous"
+                )
 
-    def create_table(self):
-        """Create a table in the HTML file
+    def create_color_table(self, num_of_rows, colors):
+        """Create a table in the HTML file that displays color hex codes and sample colors inside table cells
 
         Equivalent to creating the following:
         <table>
+            <tr>
+                <td>#888888</td>
+                <td>Cell with background of given color</td>
+            </tr>
         </table>
-        """
-        with self.template.body():
-            self.template.table(border="1px solid white")
-
-    def add_table_row(self, *args, **kwargs):
-        """Add a row in a table
 
             Args:
-                args: The number of columns to add, as well as their text content.
-                kwargs: The CSS styles that can be applied to a specific cell.
+                num_of_rows (int): The number of rows to create
+                colors (list[str]): The list of color hex codes
         """
-        with self.template.table():
-            with self.template.tr():
-                for column in args:
-                    if kwargs["background_color"] is not None and column == "":
-                        self.template.td(_t=column, style=f"background-color:{kwargs['background_color']}")
-                    else:
-                        self.template.td(_t=column)
+        with self.template.body():
+            with self.template.table(klass="table"):
+                with self.template.thead():
+                    with self.template.tr():
+                        self.template.th(_t="#", scope="col")
+                        self.template.th(_t="Hex Code", scope="col")
+                        self.template.th(_t="Sample", scope="col")
+                with self.template.tbody():
+                    for i in range(num_of_rows):
+                        with self.template.tr():
+                            self.template.th(_t=(i + 1), scope="row")
+                            self.template.td(_t=colors[i])
+                            self.template.td(style=f"background-color:{colors[i]}")
 
     def create_html_file(self, filename):
         """Create an HTML file with the given filename
 
-            Parameters:
+            Args:
                 filename (str): The name of the HTML file
         """
         with open(f"./outputs/{filename}.html", mode="w") as file:
@@ -66,9 +79,31 @@ class HtmlHandler:
     # Static Methods
     @staticmethod
     def open_html_in_browser(filename):
-        """Open the HTML file in a new browser
+        """Open the HTML file in a new browser.
 
-            Parameters:
+        The function automatically retrieves the default browser used by the current OS.
+
+        NOTE: Only Windows and macOS are supported at the moment.
+
+            Args:
                 filename (str): The path to the HTML file
         """
-        webbrowser.get(CHROME_PATH).open(filename, new=2)
+        # Retrieve the current OS of the machine
+        try:
+            current_platform = platform.system()
+            if current_platform == "Windows":
+                filename = f"file:///{pathlib.PureWindowsPath(filename).as_posix()}"
+            else:
+                filename = f"file:///{pathlib.Path(filename).as_posix()}"
+            filename = quote(filename, safe=':/')
+            webbrowser.open(filename)
+        except Exception as e:
+            raise HtmlHandlerException("Error occurred when opening the file in the web browser.")
+
+
+class HtmlHandlerException(Exception):
+    """Raised for exceptions related to the HtmlHandler class"""
+    def __init__(self, message="An error occurred in the HtmlHandler class"):
+        super().__init__()
+
+        self.message = message
